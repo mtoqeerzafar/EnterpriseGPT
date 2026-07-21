@@ -1,0 +1,20 @@
+# Local environment
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Tooling
+.vscode/
+.idea/
+
+# Python
+backend/.pytest_cache/
+backend/.mypy_cache/
+backend/.ruff_cache/
+
+# OS
+Thumbs.db
+.DS_Store
