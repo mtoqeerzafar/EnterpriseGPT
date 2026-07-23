@@ -1,0 +1,56 @@
+name: Deploy EnterpriseRagnrAI
+
+on:
+  push:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  IMAGE_NAME: ${{ vars.IMAGE_NAME }}
+  REGISTRY: ${{ vars.AZURE_CONTAINER_REGISTRY }}
+
+jobs:
+
+  deploy:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Login to Azure Container Registry
+        run: |
+          az acr login --name $REGISTRY
+
+      - name: Build Docker Image
+        run: |
+          docker build \
+            -t $REGISTRY.azurecr.io/$IMAGE_NAME:${{ github.sha }} \
+            .
+
+      - name: Push Docker Image
+        run: |
+          docker push \
+            $REGISTRY.azurecr.io/$IMAGE_NAME:${{ github.sha }}
+
+      - name: Deploy Container App
+        uses: azure/container-apps-deploy-action@v2
+        with:
+          containerAppName: ${{ vars.AZURE_CONTAINER_APP }}
+          resourceGroup: ${{ vars.AZURE_RESOURCE_GROUP }}
+          imageToDeploy: ${{ env.REGISTRY }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
