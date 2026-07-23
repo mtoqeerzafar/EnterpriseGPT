@@ -16,13 +16,10 @@ env:
   REGISTRY: ${{ vars.AZURE_CONTAINER_REGISTRY }}
 
 jobs:
-
   deploy:
-
     runs-on: ubuntu-latest
 
     steps:
-
       - name: Checkout Repository
         uses: actions/checkout@v4
 
@@ -41,7 +38,7 @@ jobs:
         run: |
           docker build \
             -t $REGISTRY.azurecr.io/$IMAGE_NAME:${{ github.sha }} \
-            .
+            ./backend
 
       - name: Push Docker Image
         run: |
@@ -54,4 +51,3 @@ jobs:
           containerAppName: ${{ vars.AZURE_CONTAINER_APP }}
           resourceGroup: ${{ vars.AZURE_RESOURCE_GROUP }}
           imageToDeploy: ${{ env.REGISTRY }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
-          
