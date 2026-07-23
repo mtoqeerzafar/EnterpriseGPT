@@ -17,11 +17,21 @@ env:
 
 jobs:
   deploy:
+
     runs-on: ubuntu-latest
 
     steps:
+
+      ##########################################################
+      # Checkout Source Code
+      ##########################################################
+
       - name: Checkout Repository
         uses: actions/checkout@v4
+
+      ##########################################################
+      # Azure Login (OIDC)
+      ##########################################################
 
       - name: Login to Azure
         uses: azure/login@v2
@@ -30,20 +40,37 @@ jobs:
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
+      ##########################################################
+      # Login to Azure Container Registry
+      ##########################################################
+
       - name: Login to Azure Container Registry
         run: |
           az acr login --name $REGISTRY
 
+      ##########################################################
+      # Build Docker Image
+      ##########################################################
+
       - name: Build Docker Image
         run: |
           docker build \
+            -f ./backend/Dockerfile \
             -t $REGISTRY.azurecr.io/$IMAGE_NAME:${{ github.sha }} \
             ./backend
+
+      ##########################################################
+      # Push Docker Image
+      ##########################################################
 
       - name: Push Docker Image
         run: |
           docker push \
             $REGISTRY.azurecr.io/$IMAGE_NAME:${{ github.sha }}
+
+      ##########################################################
+      # Deploy to Azure Container Apps
+      ##########################################################
 
       - name: Deploy Container App
         uses: azure/container-apps-deploy-action@v2
@@ -51,3 +78,4 @@ jobs:
           containerAppName: ${{ vars.AZURE_CONTAINER_APP }}
           resourceGroup: ${{ vars.AZURE_RESOURCE_GROUP }}
           imageToDeploy: ${{ env.REGISTRY }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          registryUrl: ${{ env.REGISTRY }}.azurecr.io
